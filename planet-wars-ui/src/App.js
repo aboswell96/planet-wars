@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 
 const socket = io('http://localhost:3000'); // Connect to the backend server
 
 const Game = () => {
   const [gameState, setGameState] = useState({});
-  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState([]);
   const [gameId, setGameId] = useState('gameRoom1'); // Example game room ID
+  const [username, setUsername] = useState(uuidv4())
+  const [players, setPlayers] = useState([])
 
   useEffect(() => {
     // Listen for game updates from the server (e.g., player actions, new player joins)
     socket.on('gameUpdate', (message) => {
-      setMessage(message); // Show update
+      setMessages([...messages, message]); // Show update
     });
 
     // Listen for game state from the server when joining the game
@@ -19,10 +22,14 @@ const Game = () => {
       setGameState(state); // Update the game state
     });
 
-    // Join the game room when the component mounts
-    socket.emit('joinGame', gameId);
+    socket.on('newPlayer', (player) => {
+      setPlayers([...players, player]); // Update the game state
+    });
 
-    console.log("aklex, ",gameId)
+    // Join the game room when the component mounts
+    socket.emit('joinGame', {gameId, username});
+
+    console.log("alex, ",gameId)
 
     // Clean up when component unmounts
     return () => {
@@ -38,8 +45,12 @@ const Game = () => {
 
   return (
     <div>
+      <input value={username} onChange={(e)=>setUsername(e.target.value)}></input>
       <h2>Space Exploration Game</h2>
-      <p>{message}</p>
+      <p>players</p>
+      {players.map((m,i) => {
+        return <div>{m}</div>
+      })}
       <p>Game State: {JSON.stringify(gameState)}</p>
       
       {/* Simulate playing a card */}

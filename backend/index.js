@@ -9,32 +9,33 @@ const app = express();
 // Create HTTP server
 const server = http.createServer(app);
 
+const corsDefaultOptions = {
+  origin: 'http://localhost:3001',
+  methods: ['GET', 'POST'],
+  credentials: true,
+}
+
 // Initialize Socket.IO with custom CORS options
 const io = socketIo(server, {
-  cors: {
-    origin: 'http://localhost:3001',  // Frontend URL (running on port 3001)
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true,
+  cors: {...corsDefaultOptions,
+    allowedHeaders: ['Content-Type']
   }
 });
 
+// Middleware to allow CORS for HTTP requests (API or other)
+app.use(cors(corsDefaultOptions));
+
 // Track game state (example)
 let games = {};
-
-// Middleware to allow CORS for HTTP requests (API or other)
-app.use(cors({
-  origin: 'http://localhost:3001',  // Frontend URL (running on port 3001)
-  methods: ['GET', 'POST'],
-  credentials: true,
-}));
 
 // Handle player connections
 io.on('connection', (socket) => {
   console.log('A user connected');
 
   // Listen for a player joining a game
-  socket.on('joinGame', (gameId) => {
+  socket.on('joinGame', x => {
+    console.log("joinGame args ",x)
+    let gameId = x.gameId
     console.log(`Player joining game: ${gameId}`);
     
     // Join the room for the game
@@ -52,7 +53,8 @@ io.on('connection', (socket) => {
     games[gameId].players.push(socket.id);
 
     // Emit a message to the room (game)
-    io.to(gameId).emit('gameUpdate', `A new player has joined the game!`);
+    // io.to(gameId).emit('gameUpdate', `A new player has joined the game!` + x.username);
+    io.to(gameId).emit('newPlayer',  x.username);
     
     // Send current game state to the new player
     socket.emit('gameState', games[gameId].gameState);
